@@ -75,6 +75,42 @@ def insert_session(user_id: ObjectId, token_hash: str, expires_at: datetime, use
     )
 
 
+# ---------------------------------------------------------------- sessions (long tickets)
+def find_session(token_hash: str) -> dict | None:
+    return get_db()["sessions"].find_one({"token_hash": token_hash})
+
+
+def revoke_session(session_id: ObjectId, now: datetime) -> None:
+    get_db()["sessions"].update_one({"_id": session_id, "revoked_at": None}, {"$set": {"revoked_at": now}})
+
+
+def revoke_all_sessions(user_id: ObjectId, now: datetime) -> int:
+    """Log a user out everywhere. Returns how many sessions were cancelled."""
+    return get_db()["sessions"].update_many({"user_id": user_id, "revoked_at": None},
+                                            {"$set": {"revoked_at": now}}).modified_count
+
+
+# ---------------------------------------------------------------- wrong-password records (R9)
+def add_login_failure(phone: str, ip: str, now: datetime) -> None:
+    get_db()["login_attempts"].insert_one({"phone": phone, "ip": ip, "at": now})
+
+
+def recent_failures(phone: str, since: datetime, ip: str | None = None) -> list[dict]:
+    """Wrong passwords for this phone since a time (from one device if ip is given), newest first."""
+    query = {"phone": phone, "at": {"$gt": since}}
+    if ip is not None:
+        query["ip"] = ip
+    return list(get_db()["login_attempts"].find(query).sort("at", -1))
+
+
+def clear_failures(phone: str, ip: str) -> None:
+    get_db()["login_attempts"].delete_many({"phone": phone, "ip": ip})
+
+
+def lock_user(user_id: ObjectId, until: datetime) -> None:
+    get_db()["users"].update_one({"_id": user_id}, {"$set": {"locked_until": until}})
+
+
 def insert_code(target: str, channel: str, purpose: str, code_hash: str, expires_at: datetime, now: datetime) -> None:
     get_db()["otp_codes"].insert_one(
         {

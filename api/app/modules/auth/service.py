@@ -24,7 +24,7 @@ from app.audit import write_audit
 from app.config import settings
 from app.db import client
 from app.errors import AppError
-from app.notify import mask_email, send_code
+from app.notify import mask_email, send_code, send_notice
 from app.ratelimit import check_limit
 from app.security import (
     code_matches,
@@ -143,12 +143,35 @@ def verify_code(data: VerifyIn, user_agent: str) -> tuple[dict, dict]:
     return user, _start_session(user, user_agent)
 
 
-def login(data: LoginIn, user_agent: str) -> tuple[dict, dict]:
-    """Check phone + password and give out the log-in tickets."""
+def login(data: LoginIn, user_agent: str, ip: str) -> tuple[dict, dict]:
+    """Check phone + password and give out the log-in tickets.
+
+    Password-guessing protection (FR-4 + R9):
+      - max 20 login tries per minute from one device;
+      - 10 wrong passwords for a phone from ONE device in 15 minutes
+        -> that phone is locked on that device for 15 minutes
+           (the real owner on their own device can still log in);
+      - 50 wrong passwords for a phone from ANYWHERE in 1 hour
+        -> the whole account is locked and the owner gets a notice.
+    """
+    check_limit(f"login:ip:{ip}", settings.logins_per_minute_per_ip, 60)
+    now = datetime.now(timezone.utc)
+    _refuse_if_device_locked(data.phone, ip, now)
+
     user = repository.find_user_by_phone(data.phone)
+    if user and user.get("locked_until") and user["locked_until"] > now:
+        minutes = _minutes_until(user["locked_until"], now)
+        raise AppError(423, "account_locked",
+                       f"This account is locked for safety. Try again in {minutes} minutes.")
+
     password_ok = verify_password(data.password, user["password_hash"] if user else _DUMMY_HASH)
     if not user or not password_ok:
+        repository.add_login_failure(data.phone, ip, now)
+        if user:
+            _lock_account_if_attacked(user, now)
         raise AppError(401, "wrong_login", "Phone number or password is wrong.")
+
+    repository.clear_failures(data.phone, ip)  # a correct password resets this device's count
 
     if user["status"] == "pending_verify":
         raise AppError(403, "account_not_verified",
@@ -158,6 +181,44 @@ def login(data: LoginIn, user_agent: str) -> tuple[dict, dict]:
 
     write_audit("user.login", "users", entity_id=user["_id"], actor_id=user["_id"], actor_role=user["role"])
     return user, _start_session(user, user_agent)
+
+
+# If an already-used long ticket comes back within this many seconds, we assume
+# two browser tabs refreshed at the same moment (harmless), not a thief.
+REUSE_GRACE_SECONDS = 20
+
+
+def refresh(refresh_token: str | None, user_agent: str) -> tuple[dict, dict]:
+    """Swap a long ticket for a NEW pair of tickets. Each long ticket works only once.
+
+    If a long ticket that was already swapped is used again, someone may have
+    stolen it: we log that account out everywhere (called "reuse detection").
+    """
+    now = datetime.now(timezone.utc)
+    session = repository.find_session(hash_token(refresh_token)) if refresh_token else None
+    if not session or session["expires_at"] <= now:
+        raise AppError(401, "not_logged_in", "Please log in again.")
+
+    if session.get("revoked_at"):
+        if (now - session["revoked_at"]).total_seconds() > REUSE_GRACE_SECONDS:
+            repository.revoke_all_sessions(session["user_id"], now)
+            write_audit("session.reuse_detected", "sessions", entity_id=session["user_id"], actor_role="system")
+        raise AppError(401, "not_logged_in", "Please log in again.")
+
+    user = repository.find_user_by_id(session["user_id"])
+    if not user or user["status"] != "active":
+        raise AppError(401, "not_logged_in", "Please log in again.")
+
+    repository.revoke_session(session["_id"], now)  # the old long ticket is now used up
+    return user, _start_session(user, user_agent)
+
+
+def logout(refresh_token: str | None) -> None:
+    """Cancel this browser's long ticket (if any). Always succeeds."""
+    if refresh_token:
+        session = repository.find_session(hash_token(refresh_token))
+        if session:
+            repository.revoke_session(session["_id"], datetime.now(timezone.utc))
 
 
 def public_user(user: dict) -> dict:
@@ -176,6 +237,36 @@ def public_user(user: dict) -> dict:
 
 
 # ---------------------------------------------------------------- helpers
+def _minutes_until(moment: datetime, now: datetime) -> int:
+    return max(1, int((moment - now).total_seconds() // 60) + 1)
+
+
+def _refuse_if_device_locked(phone: str, ip: str, now: datetime) -> None:
+    """10 wrong passwords from this device in 15 minutes -> wait 15 minutes."""
+    window_start = now - timedelta(minutes=settings.device_lock_window_minutes)
+    failures = repository.recent_failures(phone, window_start, ip=ip)
+    if len(failures) >= settings.device_lock_after:
+        unlock_at = failures[0]["at"] + timedelta(minutes=settings.device_lock_minutes)
+        if unlock_at > now:
+            raise AppError(429, "too_many_wrong_logins",
+                           f"Too many wrong passwords from this device. Try again in "
+                           f"{_minutes_until(unlock_at, now)} minutes.")
+
+
+def _lock_account_if_attacked(user: dict, now: datetime) -> None:
+    """Many wrong passwords from anywhere -> lock the whole account and tell the owner."""
+    failures = repository.recent_failures(user["phone"], now - timedelta(hours=1))
+    if len(failures) >= settings.account_lock_after:
+        until = now + timedelta(minutes=settings.account_lock_minutes)
+        repository.lock_user(user["_id"], until)
+        repository.revoke_all_sessions(user["_id"], now)
+        write_audit("user.lock", "users", entity_id=user["_id"], actor_role="system",
+                    after={"changed": ["locked_until"]})
+        send_notice(user["email"], "Your SafeZone account was locked",
+                    f"Someone tried many wrong passwords on your account. It is locked for "
+                    f"{settings.account_lock_minutes} minutes. If this was not you, consider changing your password.")
+
+
 def _start_session(user: dict, user_agent: str) -> dict:
     """Create the two log-in tickets. Only a hash of the long ticket is saved."""
     refresh = new_refresh_token()
