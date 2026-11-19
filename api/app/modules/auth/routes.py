@@ -6,7 +6,7 @@ and returns the answer. The real work happens in service.py.
 """
 from fastapi import APIRouter, Request, Response
 
-from app.deps import set_login_cookies
+from app.deps import REFRESH_COOKIE, clear_login_cookies, set_login_cookies
 from app.modules.auth import service
 from app.modules.auth.schemas import LoginIn, LoginOut, MessageOut, RegisterIn, RegisterOut, ResendIn, VerifyIn
 
@@ -41,6 +41,23 @@ def verify_otp(data: VerifyIn, request: Request, response: Response):
 @router.post("/login", response_model=LoginOut, summary="Log in")
 def login(data: LoginIn, request: Request, response: Response):
     """Log in with phone number and password. The tickets arrive as secure cookies."""
-    user, tickets = service.login(data, request.headers.get("user-agent", ""))
+    user, tickets = service.login(data, request.headers.get("user-agent", ""), client_ip(request))
     set_login_cookies(response, tickets)
     return {"user": service.public_user(user), "message": "Logged in."}
+
+
+@router.post("/refresh", response_model=LoginOut, summary="Get new tickets")
+def refresh(request: Request, response: Response):
+    """Swap the long ticket (cookie) for a new pair. The website calls this when the
+    15-minute ticket runs out, so people stay logged in for up to 7 days."""
+    user, tickets = service.refresh(request.cookies.get(REFRESH_COOKIE), request.headers.get("user-agent", ""))
+    set_login_cookies(response, tickets)
+    return {"user": service.public_user(user), "message": "Tickets renewed."}
+
+
+@router.post("/logout", response_model=MessageOut, summary="Log out")
+def logout(request: Request, response: Response):
+    """Cancel this browser's long ticket and remove both cookies."""
+    service.logout(request.cookies.get(REFRESH_COOKIE))
+    clear_login_cookies(response)
+    return {"message": "Logged out."}

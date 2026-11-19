@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     # --- Limits against spam (Design Revisions R9) ---
     codes_per_hour_per_target: int = 3
     registrations_per_hour_per_ip: int = 5
+    logins_per_minute_per_ip: int = 20
+
+    # --- Password-guessing lock (FR-4 + R9) ---
+    device_lock_after: int = 10  # wrong passwords for one phone from ONE device...
+    device_lock_window_minutes: int = 15  # ...within this many minutes...
+    device_lock_minutes: int = 15  # ...lock that phone on that device for this long
+    account_lock_after: int = 50  # wrong passwords for one phone from ANYWHERE in 1 hour
+    account_lock_minutes: int = 60  # -> lock the whole account for this long
 
     # Read values from the .env file in the folder where we start the server.
     model_config = SettingsConfigDict(env_file=".env")

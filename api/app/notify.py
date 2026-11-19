@@ -43,6 +43,18 @@ def send_code(email: str, code: str, purpose: str) -> None:
     raise AppError(500, "otp_channel_unknown", "Codes cannot be delivered right now.")
 
 
+def send_notice(email: str, subject: str, body: str) -> None:
+    """A security message to the account owner (e.g. 'your account was locked').
+    Uses the same channel as codes. A notice that fails to send never breaks the request."""
+    if settings.otp_channel == "email":
+        try:
+            _send_email(email, subject, body)
+        except AppError:
+            pass
+        return
+    print(f"\n[SafeZone notice] to {mask_email(email)}: {subject} - {body}\n", flush=True)
+
+
 def _send_email(to: str, subject: str, body: str) -> None:
     if not settings.smtp_host:
         raise AppError(500, "email_not_configured", "Email is not set up on the server yet.")

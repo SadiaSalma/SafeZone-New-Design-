@@ -12,7 +12,7 @@ script cannot steal them.
 """
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import Request, Response
+from fastapi import Depends, Request, Response
 
 from app.config import settings
 from app.db import get_db
@@ -32,6 +32,12 @@ def set_login_cookies(response: Response, tickets: dict) -> None:
                         httponly=True, secure=secure, samesite="lax", path="/api/v1/auth")
 
 
+def clear_login_cookies(response: Response) -> None:
+    """Remove both tickets from the browser (used when logging out)."""
+    response.delete_cookie(ACCESS_COOKIE, path="/")
+    response.delete_cookie(REFRESH_COOKIE, path="/api/v1/auth")
+
+
 def get_current_user(request: Request) -> dict:
     """Return the logged-in user, or stop with 401 'Please log in first.'"""
     token = request.cookies.get(ACCESS_COOKIE)
@@ -46,3 +52,21 @@ def get_current_user(request: Request) -> dict:
     if not user or user["status"] != "active":  # e.g. suspended since the ticket was made
         raise AppError(401, "not_logged_in", "Please log in first.")
     return user
+
+
+def require_roles(*roles: str):
+    """A door that only some roles may pass. Usage on an address:
+
+        @router.get("/review/queue")
+        def queue(user: dict = Depends(require_roles("verifier", "admin"))): ...
+
+    Not logged in -> 401. Logged in with the wrong role -> 403.
+    The website may hide staff links, but THIS check is what really protects them (design doc, Section 9).
+    """
+
+    def check(user: dict = Depends(get_current_user)) -> dict:
+        if user["role"] not in roles:
+            raise AppError(403, "forbidden", "You are not allowed to do this.")
+        return user
+
+    return check
