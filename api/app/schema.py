@@ -99,6 +99,7 @@ COLLECTIONS: dict[str, dict] = {
                 "attempts": WHOLE_NUMBER,
                 "expires_at": DATE,
                 "used_at": DATE_OR_NULL,
+                "created_at": DATE,
             },
         ),
         "indexes": [
