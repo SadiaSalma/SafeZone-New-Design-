@@ -126,6 +126,10 @@ const en = {
   faq5_q: "Is SafeZone free?",
   faq5_a: "Yes. It is built only with free, open-source tools and services.",
 
+  status_checking: "Checking the server…",
+  status_online: "All systems online",
+  status_offline: "Server offline · retrying",
+
   theme_title: "Colour theme",
   mnav_home: "Home",
   mnav_map: "Map",
@@ -256,6 +260,10 @@ const bn: Record<TextKey, string> = {
     "না। এলাকাভিত্তিক সতর্কবার্তা সিমুলেটেড টাওয়ারের সিমুলেটেড ফোনে যায়। আপনি শুধু নিজের বেছে নেওয়া এলাকার আসল নোটিফিকেশন পান।",
   faq5_q: "সেফজোন কি বিনামূল্যে?",
   faq5_a: "হ্যাঁ। এটি শুধু বিনামূল্যের ওপেন-সোর্স টুল ও সেবা দিয়ে তৈরি।",
+
+  status_checking: "সার্ভার পরীক্ষা হচ্ছে…",
+  status_online: "সব সিস্টেম চালু",
+  status_offline: "সার্ভার বন্ধ · আবার চেষ্টা হচ্ছে",
 
   theme_title: "রঙের থিম",
   mnav_home: "হোম",
