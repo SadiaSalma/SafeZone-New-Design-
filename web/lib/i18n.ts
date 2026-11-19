@@ -129,6 +129,7 @@ const en = {
   status_checking: "Checking the server…",
   status_online: "All systems online",
   status_offline: "Server offline · retrying",
+  status_db_offline: "Database offline · retrying",
 
   theme_title: "Colour theme",
   mnav_home: "Home",
@@ -264,6 +265,7 @@ const bn: Record<TextKey, string> = {
   status_checking: "সার্ভার পরীক্ষা হচ্ছে…",
   status_online: "সব সিস্টেম চালু",
   status_offline: "সার্ভার বন্ধ · আবার চেষ্টা হচ্ছে",
+  status_db_offline: "ডাটাবেস বন্ধ · আবার চেষ্টা হচ্ছে",
 
   theme_title: "রঙের থিম",
   mnav_home: "হোম",

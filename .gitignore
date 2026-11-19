@@ -22,6 +22,8 @@ out/
 # ---------- Private user data ----------
 # Uploaded GD photos and item photos
 api/storage/
+# The project database files (MongoDB data), started by api/scripts/start_db.py
+api/.data/
 
 # ---------- Editor and operating system files ----------
 .vscode/
