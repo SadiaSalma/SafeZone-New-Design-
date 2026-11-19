@@ -1,0 +1,36 @@
+# SafeZone backend libraries.
+# Install them all with:  pip install -r requirements.txt
+# Each line is one library; the comment says which task first uses it.
+
+# --- Web server (Task 2) ---
+fastapi>=0.115            # the web framework: turns Python functions into API addresses
+uvicorn[standard]>=0.30   # the server program that runs FastAPI
+pydantic-settings>=2.4    # reads settings from the .env file
+
+# --- Database (Task 5) ---
+pymongo>=4.8              # talks to MongoDB
+
+# --- Accounts and security (Tasks 7-9) ---
+pwdlib[argon2]>=0.2       # hashes passwords safely with Argon2
+pyjwt>=2.9                # creates and checks login tokens (JWT)
+email-validator>=2.2      # checks that an email address looks real
+
+# --- File uploads (Tasks 16, 29) ---
+python-multipart>=0.0.9   # lets FastAPI receive uploaded photos
+pillow>=10.4              # opens images and removes hidden GPS data (EXIF)
+
+# --- Maps and geography (Tasks 12, 21, 25-28) ---
+shapely>=2.0              # shapes: circles, polygons, "is this point inside?"
+pyproj>=3.6               # accurate distances and areas in metres / km2
+scikit-learn>=1.5         # DBSCAN, which finds theft hotspots
+
+# --- Notifications (Task 23) ---
+pywebpush>=2.0            # sends free browser push notifications
+
+# --- OCR, reading GD photos (Task 29) ---
+pytesseract>=0.3.13       # connects Python to the Tesseract program
+opencv-python-headless>=4.10  # cleans up photos before OCR
+
+# --- Testing (Task 2 onwards) ---
+pytest>=8.0               # runs our automatic tests
+httpx>=0.27               # lets tests call the API like a browser would

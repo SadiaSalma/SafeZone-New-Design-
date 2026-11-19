@@ -1,0 +1,29 @@
+# ---------- Python (backend) ----------
+# Compiled Python files, created automatically when Python runs
+__pycache__/
+*.pyc
+# The virtual environment: our private copy of Python libraries
+.venv/
+# pytest's temporary files
+.pytest_cache/
+
+# ---------- Secrets ----------
+# Environment files hold passwords and secret keys. NEVER upload them.
+.env
+.env.local
+
+# ---------- Node / Next.js (frontend) ----------
+# Downloaded JavaScript libraries (re-install with: npm install)
+node_modules/
+# Next.js build output
+.next/
+out/
+
+# ---------- Private user data ----------
+# Uploaded GD photos and item photos
+api/storage/
+
+# ---------- Editor and operating system files ----------
+.vscode/
+Thumbs.db
+.DS_Store
