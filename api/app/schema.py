@@ -81,11 +81,18 @@ COLLECTIONS: dict[str, dict] = {
                 "locked_until": DATE_OR_NULL,
                 "created_at": DATE,
                 "deleted_at": DATE_OR_NULL,
+                # NID (added before the first report): only a scrambled copy + the last 4 digits
+                "nid_hash": STRING,
+                "nid_last4": {"bsonType": "string", "pattern": r"^\d{4}$"},
+                "nid_added_at": DATE_OR_NULL,
             },
         ),
         "indexes": [
             ({"phone": 1}, {"unique": True, "name": "phone_unique"}),
             ({"email": 1}, {"unique": True, "name": "email_unique"}),
+            # One NID = one account (only for users who have added an NID)
+            ({"nid_hash": 1}, {"unique": True, "partialFilterExpression": {"nid_hash": {"$type": "string"}},
+                               "name": "one_account_per_nid"}),
         ],
     },
     "otp_codes": {

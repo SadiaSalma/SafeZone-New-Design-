@@ -15,7 +15,9 @@ security.py - SafeZone's safety tools.
 import hashlib
 import hmac
 import secrets
+from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from pwdlib import PasswordHash
@@ -52,6 +54,49 @@ def hash_code(code: str, target: str, purpose: str) -> str:
 def code_matches(code: str, target: str, purpose: str, saved_hash: str) -> bool:
     """Compare in constant time (so attackers can't guess codes by timing the answer)."""
     return hmac.compare_digest(hash_code(code, target, purpose), saved_hash)
+
+
+# ---------------------------------------------------------------- NID numbers
+def hash_nid(nid: str) -> str:
+    """Scramble an NID number. The same NID always gives the same result, so we can
+    spot duplicates without ever storing the real number."""
+    return hmac.new(settings.nid_secret.encode(), nid.encode(), hashlib.sha256).hexdigest()
+
+
+# ---------------------------------------------------------------- log-in tickets
+# The SHORT ticket (access token) is a JWT: a small signed note that says
+# "this is user X with role Y, valid until Z". We sign it with JWT_SECRET,
+# so if anyone changes even one letter, the signature no longer matches.
+#
+# The LONG ticket (refresh token) is just a long random text. We save only
+# its SHA-256 hash in the "sessions" collection (like a password).
+def create_access_token(user_id: str, role: str) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": user_id,  # "subject": who the ticket belongs to
+        "role": role,
+        "type": "access",
+        "iat": now,  # issued at
+        "exp": now + timedelta(minutes=settings.access_minutes),  # expires
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def read_access_token(token: str) -> dict | None:
+    """Return the ticket's contents, or None if it is fake, changed or expired."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+    except jwt.InvalidTokenError:  # covers: bad signature, expired, malformed
+        return None
+    return payload if payload.get("type") == "access" else None
+
+
+def new_refresh_token() -> str:
+    return secrets.token_urlsafe(32)  # 43 random characters
+
+
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 # ---------------------------------------------------------------- CSRF header check

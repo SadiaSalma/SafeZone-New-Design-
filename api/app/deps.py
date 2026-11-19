@@ -1,0 +1,48 @@
+"""
+deps.py - "who is logged in?" checks that any address can use (design doc 3.3).
+
+FastAPI "dependencies": an address writes  user = Depends(get_current_user)
+and FastAPI runs this check first. If nobody is logged in, the address never runs.
+
+The log-in tickets travel in cookies:
+  sz_access  - the short ticket (15 minutes), sent with every request
+  sz_refresh - the long ticket (7 days), only sent to /api/v1/auth/...
+Both are "httpOnly": JavaScript on the page cannot read them, so even a bad
+script cannot steal them.
+"""
+from bson import ObjectId
+from bson.errors import InvalidId
+from fastapi import Request, Response
+
+from app.config import settings
+from app.db import get_db
+from app.errors import AppError
+from app.security import read_access_token
+
+ACCESS_COOKIE = "sz_access"
+REFRESH_COOKIE = "sz_refresh"
+
+
+def set_login_cookies(response: Response, tickets: dict) -> None:
+    """Put both tickets into secure cookies on the response."""
+    secure = settings.app_env != "development"  # on a real server: only over https
+    response.set_cookie(ACCESS_COOKIE, tickets["access"], max_age=settings.access_minutes * 60,
+                        httponly=True, secure=secure, samesite="lax", path="/")
+    response.set_cookie(REFRESH_COOKIE, tickets["refresh"], max_age=settings.refresh_days * 24 * 3600,
+                        httponly=True, secure=secure, samesite="lax", path="/api/v1/auth")
+
+
+def get_current_user(request: Request) -> dict:
+    """Return the logged-in user, or stop with 401 'Please log in first.'"""
+    token = request.cookies.get(ACCESS_COOKIE)
+    payload = read_access_token(token) if token else None
+    if not payload:
+        raise AppError(401, "not_logged_in", "Please log in first.")
+
+    try:
+        user = get_db()["users"].find_one({"_id": ObjectId(payload["sub"])})
+    except InvalidId:
+        user = None
+    if not user or user["status"] != "active":  # e.g. suspended since the ticket was made
+        raise AppError(401, "not_logged_in", "Please log in first.")
+    return user
