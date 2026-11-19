@@ -2,7 +2,8 @@
 /**
  * BackendStatus.tsx - the little status light in the footer.
  * Every 30 seconds it asks the backend "are you alive?" (GET /api/v1/health)
- * and shows green with the answer time, or red if there is no answer.
+ * and shows: green with the answer time, red if the backend does not answer,
+ * or red "Database offline" if the backend answers but cannot reach MongoDB.
  */
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -10,7 +11,9 @@ import { usePrefs } from "@/components/PreferencesProvider";
 
 const CHECK_EVERY_MS = 30_000;
 
-type Status = "checking" | "online" | "offline";
+type Status = "checking" | "online" | "offline" | "db_offline";
+
+type Health = { status: string; database?: { ok: boolean } };
 
 export function BackendStatus() {
   const { t } = usePrefs();
@@ -23,10 +26,10 @@ export function BackendStatus() {
     async function check() {
       const start = performance.now();
       try {
-        await api<{ status: string }>("/health");
+        const health = await api<Health>("/health");
         if (stopped) return;
         setMs(Math.round(performance.now() - start));
-        setStatus("online");
+        setStatus(health.database?.ok === false ? "db_offline" : "online");
       } catch {
         if (stopped) return;
         setMs(null);
@@ -42,13 +45,13 @@ export function BackendStatus() {
     };
   }, []);
 
-  const colour = status === "online" ? "bg-green-400" : status === "offline" ? "bg-red-500" : "bg-yellow-300";
-  const label =
-    status === "online"
-      ? `${t("status_online")} · ${ms} ms`
-      : status === "offline"
-        ? t("status_offline")
-        : t("status_checking");
+  const colour = status === "online" ? "bg-green-400" : status === "checking" ? "bg-yellow-300" : "bg-red-500";
+  const label = {
+    online: `${t("status_online")} · ${ms} ms`,
+    offline: t("status_offline"),
+    db_offline: t("status_db_offline"),
+    checking: t("status_checking"),
+  }[status];
 
   return (
     <span

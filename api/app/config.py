@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     # The website's address. Only this address may call the backend from a browser (CORS).
     web_origin: str = "http://localhost:3000"
 
+    # The database. Our own MongoDB runs on port 27018 as replica set "rs0"
+    # (started with scripts/start_db.py). MONGODB_DB is the database's name.
+    mongodb_uri: str = "mongodb://127.0.0.1:27018/?replicaSet=rs0"
+    mongodb_db: str = "safezone"
+
     # Read values from the .env file in the folder where we start the server.
     model_config = SettingsConfigDict(env_file=".env")
 

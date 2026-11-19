@@ -8,11 +8,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.db import database_status
 from app.errors import register_error_handlers
 from app.security import csrf_header_check
 
 # Create the web application. The title and version appear on the /docs page.
-app = FastAPI(title=settings.app_name, version="0.2.0")
+app = FastAPI(title=settings.app_name, version="0.3.0")
 
 # Every error comes back in the same shape: {"error": {"code", "message", "fields"}}
 register_error_handlers(app)
@@ -32,5 +33,16 @@ app.add_middleware(
 
 @app.get("/api/v1/health")
 def health():
-    """Answer 'I am alive'. The website's status light calls this every 30 seconds."""
-    return {"status": "ok", "app": settings.app_name, "env": settings.app_env, "version": app.version}
+    """Answer 'I am alive' and say whether the database is reachable.
+
+    The website's status light calls this every 30 seconds.
+    status is "ok" when everything works, "degraded" when the database is down.
+    """
+    database = database_status()
+    return {
+        "status": "ok" if database["ok"] else "degraded",
+        "app": settings.app_name,
+        "env": settings.app_env,
+        "version": app.version,
+        "database": database,
+    }

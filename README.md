@@ -29,6 +29,31 @@ safezone/
 └── web/   Next.js frontend (TypeScript)
 ```
 
+## Run it on your computer
+
+Needs: Python 3.12, Node.js, MongoDB Community Server (only the `mongod` program is used).
+
+First time only:
+
+```
+cd api
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+copy .env.example .env
+cd ..\web
+npm.cmd install
+```
+
+Every time, in three terminals:
+
+| What | Folder | Command | Address |
+| --- | --- | --- | --- |
+| Database (MongoDB replica set rs0) | `api` | `.venv\Scripts\python.exe scripts\start_db.py` | port 27018 |
+| Backend (FastAPI) | `api` | `.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000` | http://localhost:8000/docs |
+| Website (Next.js) | `web` | `npm.cmd run dev` | http://localhost:3000 |
+
+Tests: in `api`, run `.venv\Scripts\python.exe -m pytest`.
+
 ## Development progress
 
 - [ ] Phase A: Setup
