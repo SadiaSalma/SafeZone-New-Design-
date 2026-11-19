@@ -5,6 +5,7 @@
  */
 import { ShieldCheck } from "lucide-react";
 import { usePrefs } from "@/components/PreferencesProvider";
+import { BackendStatus } from "@/components/BackendStatus";
 
 const PHOTOGRAPHERS = [
   { name: "Towfiq islam", username: "filmsbytowfiq" },
@@ -26,6 +27,9 @@ export function Footer() {
           </div>
           <p className="mt-2 max-w-sm text-sm">{t("footer_tag")}</p>
           <p className="mt-4 text-xs text-white/60">{t("footer_project")}</p>
+          <div className="mt-4">
+            <BackendStatus />
+          </div>
         </div>
         <p className="text-xs leading-relaxed text-white/60 md:text-right">
           {t("footer_photos")}{" "}
