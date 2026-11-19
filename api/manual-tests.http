@@ -1,0 +1,149 @@
+# SafeZone - manual tests you can click in VS Code
+#
+# Needs the VS Code extension "REST Client" (by Huachao Mao).
+# 1. Start everything: Terminal -> Run Task -> "SafeZone: start ALL (database + backend + website)"
+# 2. Click "Send Request" above any request below. The answer opens on the right.
+# 3. Go from top to bottom: the cookies from logging in are remembered automatically.
+#
+# All requests go through the WEBSITE address (port 3000), exactly like the real website will.
+
+@base = http://localhost:3000/api/v1
+
+# Change these if you test more than once (phone and email must be new each time)
+@phone = 01712345678
+@email = test.user@example.com
+@password = safe-pass-123
+
+
+######################################################################
+# TASK 4 + 5 - the website talks to the backend and the database
+######################################################################
+
+### 4.1 Health check - expect 200 and "database": {"ok": true, ...}
+GET {{base}}/health
+
+### 4.2 Wrong address - expect 404 and the standard error shape {"error": {...}}
+GET {{base}}/this-does-not-exist
+
+### 4.3 Change WITHOUT the safety header - expect 403 "missing_safety_header"
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"phone": "{{phone}}", "password": "{{password}}"}
+
+
+######################################################################
+# TASK 7 - sign up
+######################################################################
+
+### 7.1 Sign up - expect 201 and "status": "pending_verify"
+###     Then look in the BACKEND terminal for:  [SafeZone code] ... -> 123456
+POST {{base}}/auth/register
+Content-Type: application/json
+X-SafeZone: 1
+
+{
+  "name_en": "Test User",
+  "name_bn": "টেস্ট ইউজার",
+  "phone": "{{phone}}",
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 7.2 Same sign-up again - expect 409 "already_registered"
+POST {{base}}/auth/register
+Content-Type: application/json
+X-SafeZone: 1
+
+{"name_en": "Test User", "phone": "{{phone}}", "email": "{{email}}", "password": "{{password}}"}
+
+### 7.3 Bad input - expect 422 with a message for phone, email and password
+POST {{base}}/auth/register
+Content-Type: application/json
+X-SafeZone: 1
+
+{"name_en": "Test User", "phone": "12345", "email": "not-an-email", "password": "short"}
+
+### 7.4 Send the code again - expect 200 (a new code appears in the backend terminal)
+POST {{base}}/auth/resend-otp
+Content-Type: application/json
+X-SafeZone: 1
+
+{"email": "{{email}}"}
+
+
+######################################################################
+# TASK 8 - confirm the code, log in, who am I, NID
+######################################################################
+
+### 8.1 Confirm with a WRONG code - expect 400 "Wrong code. 4 tries left."
+POST {{base}}/auth/verify-otp
+Content-Type: application/json
+X-SafeZone: 1
+
+{"email": "{{email}}", "code": "000000"}
+
+### 8.2 Confirm with the RIGHT code - expect 200 "Account confirmed"
+###     !!! Replace 123456 with the newest code from the backend terminal !!!
+POST {{base}}/auth/verify-otp
+Content-Type: application/json
+X-SafeZone: 1
+
+{"email": "{{email}}", "code": "123456"}
+
+### 8.3 Who am I - expect 200 with your details (you are logged in by cookie)
+GET {{base}}/me
+
+### 8.4 Add an NID with a bad format - expect 422 "10, 13 or 17 digits"
+POST {{base}}/me/nid
+Content-Type: application/json
+X-SafeZone: 1
+
+{"nid": "12345"}
+
+### 8.5 Add an NID - expect 200, "nid_added": true, "nid_last4": "7890"
+POST {{base}}/me/nid
+Content-Type: application/json
+X-SafeZone: 1
+
+{"nid": "1234567890"}
+
+### 8.6 Log in with phone + password - expect 200 "Logged in."
+POST {{base}}/auth/login
+Content-Type: application/json
+X-SafeZone: 1
+
+{"phone": "{{phone}}", "password": "{{password}}"}
+
+### 8.7 Wrong password - expect 401 "Phone number or password is wrong."
+POST {{base}}/auth/login
+Content-Type: application/json
+X-SafeZone: 1
+
+{"phone": "{{phone}}", "password": "wrong-pass-1"}
+
+
+######################################################################
+# TASK 9 - stay logged in, log out, password-guessing lock
+######################################################################
+
+### 9.1 Get new tickets - expect 200 "Tickets renewed."
+POST {{base}}/auth/refresh
+X-SafeZone: 1
+
+### 9.2 Log out - expect 200 "Logged out."
+POST {{base}}/auth/logout
+X-SafeZone: 1
+
+### 9.3 Who am I after logging out - expect 401 "Please log in first."
+GET {{base}}/me
+
+### 9.4 Lock test: click this 10 times (each = 401), the 11th time expect 429
+###     "Too many wrong passwords from this device". Then 8.6 (right password) is ALSO refused
+###     for 15 minutes from this computer. (To unlock early: delete the login_attempts
+###     documents in MongoDB Compass.)
+POST {{base}}/auth/login
+Content-Type: application/json
+X-SafeZone: 1
+
+{"phone": "{{phone}}", "password": "wrong-pass-1"}

@@ -32,3 +32,9 @@ def test_health_always_answers_even_without_database():
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json()["status"] in {"ok", "degraded"}
+
+
+def test_docs_page_adds_the_safety_header_for_try_it_out():
+    page = client.get("/docs")
+    assert page.status_code == 200
+    assert "req.headers['X-SafeZone'] = '1'" in page.text

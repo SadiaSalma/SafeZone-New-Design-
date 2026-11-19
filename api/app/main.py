@@ -6,6 +6,8 @@ The server program (uvicorn) loads the `app` object from this file:
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse
 
 from app.config import settings
 from app.db import database_status
@@ -15,7 +17,8 @@ from app.modules.users.routes import router as users_router
 from app.security import csrf_header_check
 
 # Create the web application. The title and version appear on the /docs page.
-app = FastAPI(title=settings.app_name, version="0.5.0")
+# docs_url=None: we serve our own /docs page (see the bottom of this file).
+app = FastAPI(title=settings.app_name, version="0.5.0", docs_url=None)
 
 # Every error comes back in the same shape: {"error": {"code", "message", "fields"}}
 register_error_handlers(app)
@@ -52,3 +55,21 @@ def health():
         "version": app.version,
         "database": database,
     }
+
+
+@app.get("/docs", include_in_schema=False)
+def docs_page():
+    """The interactive docs page, where you can click "Try it out" on every address.
+
+    Our own website always adds the X-SafeZone: 1 safety header to changes
+    (web/lib/api.ts). This page does the same, so "Try it out" works for
+    sign up, log in, etc. Security is unchanged: a bad website still cannot
+    add this header to requests.
+    """
+    page = get_swagger_ui_html(openapi_url=app.openapi_url, title=f"{settings.app_name} - docs").body.decode()
+    page = page.replace(
+        "SwaggerUIBundle({",
+        "SwaggerUIBundle({\n        requestInterceptor: (req) => { req.headers['X-SafeZone'] = '1'; return req; },",
+        1,
+    )
+    return HTMLResponse(page)
