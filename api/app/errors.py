@@ -66,7 +66,9 @@ def register_error_handlers(app: FastAPI) -> None:
         for problem in exc.errors():
             # problem["loc"] looks like ("body", "phone") -> we keep the last part: "phone"
             name = str(problem["loc"][-1]) if problem.get("loc") else "request"
-            fields[name] = problem.get("msg", "Invalid value")
+            message = problem.get("msg", "Invalid value")
+            # Our own rules come back as "Value error, <our message>" - keep only our message
+            fields[name] = message.removeprefix("Value error, ")
         return JSONResponse(
             error_body("invalid_input", "Some fields are not valid.", fields), status_code=422
         )

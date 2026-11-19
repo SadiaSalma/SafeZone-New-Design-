@@ -10,10 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.db import database_status
 from app.errors import register_error_handlers
+from app.modules.auth.routes import router as auth_router
 from app.security import csrf_header_check
 
 # Create the web application. The title and version appear on the /docs page.
-app = FastAPI(title=settings.app_name, version="0.3.0")
+app = FastAPI(title=settings.app_name, version="0.4.0")
 
 # Every error comes back in the same shape: {"error": {"code", "message", "fields"}}
 register_error_handlers(app)
@@ -29,6 +30,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "X-SafeZone"],
 )
+
+# Feature modules: each adds its own web addresses
+app.include_router(auth_router)  # /api/v1/auth/... (sign up, codes)
 
 
 @app.get("/api/v1/health")
