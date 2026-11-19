@@ -1,26 +1,390 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * COLOUR THEMES
+ * Each block below is one theme. The website reads these variables, so
+ * switching <html data-theme="..."> repaints the whole site at once.
+ *
+ *  --bg            page background
+ *  --bg-soft       slightly darker background for sections
+ *  --surface       cards and panels
+ *  --primary       main brand colour (buttons, icons)
+ *  --primary-strong darker brand colour (big banners, footer)
+ *  --accent        second colour for highlights
+ *  --ink           main text
+ *  --ink-soft      secondary text
+ *  --on-primary    text placed on top of --primary
+ *  --line          thin borders
+ */
+:root,
+[data-theme="mocha"] {
+  --bg: #efe8e2;
+  --bg-soft: #e5d9cf;
+  --surface: #fbf8f5;
+  --primary: #8c6e5d;
+  --primary-strong: #4f3b2f;
+  --accent: #d9b99b;
+  --ink: #2e2420;
+  --ink-soft: #6e5d53;
+  --on-primary: #ffffff;
+  --line: rgb(46 36 32 / 0.1);
+}
+[data-theme="green"] {
+  --bg: #e9f2ee;
+  --bg-soft: #d8e9e0;
+  --surface: #ffffff;
+  --primary: #006a4e;
+  --primary-strong: #024634;
+  --accent: #e8414f;
+  --ink: #10261e;
+  --ink-soft: #4b6359;
+  --on-primary: #ffffff;
+  --line: rgb(16 38 30 / 0.1);
+}
+[data-theme="blue"] {
+  --bg: #eaf1f8;
+  --bg-soft: #d9e5f2;
+  --surface: #ffffff;
+  --primary: #1e5aa8;
+  --primary-strong: #0d3a75;
+  --accent: #f2a93b;
+  --ink: #0f2240;
+  --ink-soft: #4b5d78;
+  --on-primary: #ffffff;
+  --line: rgb(15 34 64 / 0.1);
+}
+[data-theme="sage"] {
+  --bg: #edf2eb;
+  --bg-soft: #dde7d9;
+  --surface: #fbfcfa;
+  --primary: #5f8466;
+  --primary-strong: #34503b;
+  --accent: #e3b66b;
+  --ink: #1f2b21;
+  --ink-soft: #56665a;
+  --on-primary: #ffffff;
+  --line: rgb(31 43 33 / 0.1);
+}
+[data-theme="terracotta"] {
+  --bg: #f6ece6;
+  --bg-soft: #efdcd1;
+  --surface: #fffaf7;
+  --primary: #c2603e;
+  --primary-strong: #7f3820;
+  --accent: #2f5d62;
+  --ink: #2b1a14;
+  --ink-soft: #6f5248;
+  --on-primary: #ffffff;
+  --line: rgb(43 26 20 / 0.1);
+}
+[data-theme="plum"] {
+  --bg: #f1ecf5;
+  --bg-soft: #e4dbed;
+  --surface: #fdfbff;
+  --primary: #6b4c9a;
+  --primary-strong: #412c63;
+  --accent: #e7849b;
+  --ink: #221832;
+  --ink-soft: #5d5170;
+  --on-primary: #ffffff;
+  --line: rgb(34 24 50 / 0.1);
+}
+[data-theme="ocean"] {
+  --bg: #e8f4f3;
+  --bg-soft: #d4ebe9;
+  --surface: #ffffff;
+  --primary: #137c7a;
+  --primary-strong: #0a4f4e;
+  --accent: #ff8a5b;
+  --ink: #0e2625;
+  --ink-soft: #4a6463;
+  --on-primary: #ffffff;
+  --line: rgb(14 38 37 / 0.1);
+}
+[data-theme="midnight"] {
+  --bg: #11151c;
+  --bg-soft: #181e28;
+  --surface: #1c2330;
+  --primary: #7fa7ff;
+  --primary-strong: #0b1220;
+  --accent: #f5b85c;
+  --ink: #e8edf5;
+  --ink-soft: #9aa6b8;
+  --on-primary: #0b1220;
+  --line: rgb(232 237 245 / 0.1);
 }
 
+[data-theme="rose"] {
+  --bg: #f3e6e6;
+  --bg-soft: #ead6d7;
+  --surface: #fff9f9;
+  --primary: #b07a80;
+  --primary-strong: #6e4148;
+  --accent: #f0c9cb;
+  --ink: #3a2326;
+  --ink-soft: #7a5a5e;
+  --on-primary: #ffffff;
+  --line: rgb(58 35 38 / 0.1);
+}
+[data-theme="stone"] {
+  --bg: #e9e6e1;
+  --bg-soft: #dcd7d0;
+  --surface: #f8f6f3;
+  --primary: #2b2b2e;
+  --primary-strong: #3a3633;
+  --accent: #d8b8a3;
+  --ink: #232224;
+  --ink-soft: #6b6661;
+  --on-primary: #ffffff;
+  --line: rgb(35 34 36 / 0.1);
+}
+[data-theme="gold"] {
+  --bg: #161616;
+  --bg-soft: #1d1d1d;
+  --surface: #222222;
+  --primary: #d4af6a;
+  --primary-strong: #0c0c0c;
+  --accent: #ead7a8;
+  --ink: #f2eee6;
+  --ink-soft: #a8a296;
+  --on-primary: #161616;
+  --line: rgb(242 238 230 / 0.1);
+}
+[data-theme="emerald"] {
+  --bg: #0f1b17;
+  --bg-soft: #13221d;
+  --surface: #16261f;
+  --primary: #3ccf91;
+  --primary-strong: #07110d;
+  --accent: #f2c14e;
+  --ink: #e6f2ec;
+  --ink-soft: #94aba1;
+  --on-primary: #07110d;
+  --line: rgb(230 242 236 / 0.1);
+}
+
+/* Make the variables usable as Tailwind classes: bg-primary, text-ink, border-line ... */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-accent: var(--accent);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-on-primary: var(--on-primary);
+  --color-line: var(--line);
+  /* Poppins for English, Hind Siliguri takes over for Bangla letters */
+  --font-sans: var(--font-poppins), var(--font-hind), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Dark fade at the bottom of photos, so white text on them stays readable */
+.photo-fade {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.78), rgb(0 0 0 / 0.25) 55%, rgb(0 0 0 / 0.05));
+}
+
+/* Soft shadow used on cards (like the reference design) */
+.soft-shadow {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 12px 32px -12px rgb(0 0 0 / 0.18);
+}
+
+/* Gentle "rise up" animation when a section appears */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.7s ease both;
+}
+
+/* Hide the scrollbar on horizontal card rows but keep them scrollable */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}
+
+/* ---------- Moving design (added for the premium home page) ---------- */
+
+/* Slow "camera" zoom on the active hero photo (Ken Burns effect) */
+@keyframes kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.14);
+  }
+}
+.kenburns {
+  animation: kenburns 9s ease-out both;
+}
+
+/* Hovering the slider pauses the zoom */
+.paused .kenburns {
+  animation-play-state: paused;
+}
+
+/* Rings that pulse out of the "Live alerts" button (like the play button) */
+@keyframes pulse-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+.pulse-ring-late {
+  animation: pulse-ring 2.4s ease-out 1.2s infinite;
+}
+
+/* Endless sliding strip of area names */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee {
+  animation: marquee 32s linear infinite;
+}
+
+/* Sections fade up when they scroll into view (see components/Reveal.tsx) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
+}
+.reveal.shown {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kenburns,
+  .marquee,
+  .pulse-ring,
+  .pulse-ring-late {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Extra premium motion (round 2) ---------- */
+
+/* Gentle up-and-down float for the glass alert card */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.float {
+  animation: float 5s ease-in-out infinite;
+}
+
+/* Opening screen: logo appears, line fills, then everything fades away */
+@keyframes splash-out {
+  0%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.splash {
+  animation: splash-out 2.2s ease forwards;
+}
+@keyframes grow-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.grow-line {
+  transform-origin: left;
+  animation: grow-line 1.5s ease-in-out both;
+}
+
+/* Phone notifications slide in one after another, then the cycle repeats */
+@keyframes notif {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.97);
+  }
+  6%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  88%,
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.notif {
+  opacity: 0;
+  animation: notif 9s ease infinite;
+}
+
+/* FAQ: hide the browser's default triangle on questions */
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float,
+  .grow-line {
+    animation: none;
+  }
+  .notif {
+    animation: none;
+    opacity: 1;
+  }
+  .splash {
+    display: none;
+  }
 }
