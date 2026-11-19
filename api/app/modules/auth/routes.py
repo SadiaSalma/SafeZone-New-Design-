@@ -4,10 +4,11 @@ routes.py (auth) - the web addresses for accounts.
 Each function here is small: it receives the request, calls service.py,
 and returns the answer. The real work happens in service.py.
 """
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
+from app.deps import set_login_cookies
 from app.modules.auth import service
-from app.modules.auth.schemas import MessageOut, RegisterIn, RegisterOut, ResendIn
+from app.modules.auth.schemas import LoginIn, LoginOut, MessageOut, RegisterIn, RegisterOut, ResendIn, VerifyIn
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Accounts"])
 
@@ -27,3 +28,19 @@ def register(data: RegisterIn, request: Request):
 def resend_otp(data: ResendIn):
     """Send a new code. Max 3 codes per hour for one email."""
     return service.resend_code(data.email, data.purpose)
+
+
+@router.post("/verify-otp", response_model=LoginOut, summary="Confirm the code")
+def verify_otp(data: VerifyIn, request: Request, response: Response):
+    """Check the 6-digit code. The account becomes active and the person is logged in."""
+    user, tickets = service.verify_code(data, request.headers.get("user-agent", ""))
+    set_login_cookies(response, tickets)
+    return {"user": service.public_user(user), "message": "Account confirmed. Welcome to SafeZone!"}
+
+
+@router.post("/login", response_model=LoginOut, summary="Log in")
+def login(data: LoginIn, request: Request, response: Response):
+    """Log in with phone number and password. The tickets arrive as secure cookies."""
+    user, tickets = service.login(data, request.headers.get("user-agent", ""))
+    set_login_cookies(response, tickets)
+    return {"user": service.public_user(user), "message": "Logged in."}

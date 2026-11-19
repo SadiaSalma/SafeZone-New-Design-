@@ -80,3 +80,46 @@ class ResendIn(BaseModel):
 class MessageOut(BaseModel):
     message: str
     demo_code: str | None = None
+
+
+class VerifyIn(BaseModel):
+    """The 6-digit code the person received after signing up."""
+
+    email: EmailStr = Field(examples=["rahim@example.com"])
+    code: str = Field(pattern=r"^\d{6}$", examples=["123456"])
+
+    @field_validator("email")
+    @classmethod
+    def lowercase_email(cls, value: str) -> str:
+        return value.lower()
+
+
+class LoginIn(BaseModel):
+    """Log in with phone number and password (FR-2)."""
+
+    phone: str = Field(examples=["01712345678"])
+    password: str = Field(min_length=1, max_length=128, examples=["safe-pass-123"])
+
+    @field_validator("phone")
+    @classmethod
+    def check_phone(cls, value: str) -> str:
+        return normalize_phone(value)
+
+
+class UserOut(BaseModel):
+    """What the website may know about the logged-in person."""
+
+    id: str
+    name_en: str
+    name_bn: str
+    phone: str
+    email: str
+    role: str
+    status: str
+    nid_added: bool = False  # True once the person has added an NID
+    nid_last4: str | None = None  # only the last 4 digits, e.g. "1234"
+
+
+class LoginOut(BaseModel):
+    user: UserOut
+    message: str

@@ -37,6 +37,16 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = ""
 
+    # --- Log-in "tickets" (design doc 5.1 and Section 9) ---
+    jwt_secret: str = "dev-only-change-me-to-a-long-random-text"  # signs the short ticket
+    access_minutes: int = 15  # the short ticket (access token) lasts 15 minutes
+    refresh_days: int = 7  # the long ticket (refresh token) lasts 7 days
+    max_code_attempts: int = 5  # wrong guesses allowed for one code
+
+    # --- NID (national ID) number: stored only scrambled with this secret ---
+    nid_secret: str = "dev-only-change-me-nid"
+    nid_tries_per_hour: int = 10
+
     # --- Limits against spam (Design Revisions R9) ---
     codes_per_hour_per_target: int = 3
     registrations_per_hour_per_ip: int = 5

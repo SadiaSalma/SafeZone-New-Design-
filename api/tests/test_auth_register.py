@@ -56,8 +56,9 @@ def test_code_hash_only_matches_the_same_code_person_and_purpose():
 
 
 # =============================== Part 2: with the test database ===============================
+DATABASE_UP = database_status()["ok"]  # asked once, not before every test
 needs_database = pytest.mark.skipif(
-    not database_status()["ok"],
+    not DATABASE_UP,
     reason="Database not running. Start it: Terminal -> Run Task -> 'SafeZone: start database'",
 )
 client = TestClient(app)
@@ -76,7 +77,7 @@ def db():
 @pytest.fixture(autouse=True)
 def fresh_limits():
     """Spam limits are per hour, so reset them before each test."""
-    if database_status()["ok"]:
+    if DATABASE_UP:
         get_db()["rate_counters"].delete_many({})
 
 
