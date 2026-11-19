@@ -52,6 +52,9 @@ Every time, in three terminals:
 | Backend (FastAPI) | `api` | `.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000` | http://localhost:8000/docs |
 | Website (Next.js) | `web` | `npm.cmd run dev` | http://localhost:3000 |
 
+Set up the database (first time, and after pulling changes; safe to run again), with the database running:
+in `api`, run `.venv\Scripts\python.exe -m scripts.init_db`. It creates all 22 collections with their rules and indexes.
+
 Tests: in `api`, run `.venv\Scripts\python.exe -m pytest`.
 
 ## Development progress
